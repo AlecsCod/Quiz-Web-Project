@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>QuizRush</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app" v-cloak>
+<header><nav aria-label="Main">
+  <span class="logo">⚡ QuizRush</span>
+  <button :class="{on:view==='list'}" @click="go('list')">Quizzes</button>
+  <button :class="{on:view==='create'}" @click="go('create')">Create</button>
+  <button :class="{on:view==='history'}" @click="go('history')">History</button>
+</nav></header>
+<main>
+
+<!-- VIEW 1: quiz list -->
+<section v-if="view==='list'">
+  <h1>Choose a quiz</h1>
+  <div class="card">
+    <label for="nm">Your name</label>
+    <input id="nm" type="text" v-model="name" :class="{bad:nameErr}" maxlength="20" placeholder="e.g. Alex" @input="nameErr=''" @change="save('qr_name',name)">
+    <div class="err" role="alert" v-if="nameErr">{{nameErr}}</div>
+  </div>
+  <div class="grid">
+    <div class="card" v-for="q in all" :key="q.id">
+      <h2>{{q.title}}</h2>
+      <p class="mu">{{q.qs.length}} questions · {{q.time}}s each <span class="pill" v-if="q.custom">yours</span></p>
+      <p class="mu" v-if="best(q.id)!==null">Best: {{best(q.id)}}%</p>
+      <div class="row">
+        <button class="btn" @click="begin(q)">Start</button>
+        <button class="btn dng" v-if="q.custom" @click="del(q.id)">Delete</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VIEW 2: one question at a time -->
+<section v-if="view==='quiz'">
+  <div class="top"><span>{{quiz.title}} · Q{{qi+1}}/{{quiz.qs.length}}</span><span :style="{color:left<=5?'var(--no)':''}" aria-live="off">⏱ {{left}}s</span></div>
+  <div class="bar"><i :class="{low:left<=5}" :style="{width:(picked===null?(left-1)/quiz.time*100:left/quiz.time*100)+'%'}"></i></div>
+  <div class="card">
+    <h2>{{cur.q}}</h2>
+    <button v-for="(o,i) in cur.o" :key="i" class="opt" :disabled="picked!==null"
+      :class="{ok:picked!==null&&i===cur.a,no:picked===i&&i!==cur.a}" @click="lock(i)">{{o}}</button>
+    <p v-if="picked===-1" class="err">⏰ Time’s up! The correct answer is highlighted.</p>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" v-if="picked!==null" @click="next">{{qi+1<quiz.qs.length?'Next question →':'See results'}}</button>
+      <button class="btn sec" @click="quit">Quit quiz</button>
+    </div>
+  </div>
+</section>
+
+<!-- VIEW 3: result -->
+<section v-if="view==='result'">
+  <div class="card" style="text-align:center">
+    <p class="mu">{{res.quiz}} · {{res.name}}</p>
+    <div class="big">{{res.score}} / {{res.total}}</div>
+    <h2>{{pct(res)}}% — {{pct(res)>=80?'Excellent! 🎉':pct(res)>=50?'Good job 👍':'Keep practising 💪'}}</h2>
+    <div class="row" style="justify-content:center;margin-top:12px">
+      <button class="btn" @click="begin(quiz)">Retry</button>
+      <button class="btn sec" @click="go('list')">All quizzes</button>
+      <button class="btn sec" @click="go('history')">History</button>
+    </div>
+  </div>
+  <div class="card" v-for="(q,i) in quiz.qs" :key="i">
+    <strong>{{i+1}}. {{q.q}}</strong>
+    <p :style="{color:answers[i]===q.a?'var(--ok)':'var(--no)'}">
+      {{answers[i]===q.a?'✔ Correct':answers[i]===-1?'✖ No answer (time ran out)':'✖ You answered: '+q.o[answers[i]]}}</p>
+    <p class="mu" v-if="answers[i]!==q.a">Correct answer: {{q.o[q.a]}}</p>
+  </div>
+</section>
+
+<!-- VIEW 4: history -->
+<section v-if="view==='history'">
+  <h1>Results history</h1>
+  <div class="card" v-if="!history.length"><p class="mu">No quizzes taken yet. Take one and your score will be saved here.</p></div>
+  <div class="card tw" v-else>
+    <table><thead><tr><th>Date</th><th>Player</th><th>Quiz</th><th>Score</th></tr></thead>
+    <tbody><tr v-for="h in history" :key="h.id"><td>{{fmt(h.id)}}</td><td>{{h.name}}</td><td>{{h.quiz}}</td><td>{{h.score}}/{{h.total}} ({{pct(h)}}%)</td></tr></tbody></table>
+    <div class="row" style="margin-top:14px">
+      <button class="btn dng" @click="clearH">{{confirmClear?'Click again to confirm':'Clear history'}}</button>
+    </div>
+  </div>
+</section>
+
+<!-- VIEW 5: create quiz (validated form) -->
+<section v-if="view==='create'">
+  <h1>Create a quiz</h1>
+  <div class="card">
+    <div class="err" role="alert" v-if="errs.length"><strong>Please fix the following:</strong><ul><li v-for="e in errs">{{e}}</li></ul></div>
+    <div class="ok" v-if="saved" style="color:var(--ok);font-weight:700">✔ Quiz saved! Find it in the Quizzes tab.</div>
+    <label for="t">Quiz title</label>
+    <input id="t" type="text" v-model="draft.title" maxlength="40" placeholder="e.g. World capitals">
+    <label for="s">Seconds per question (5–120)</label>
+    <input id="s" type="number" v-model.number="draft.time" min="5" max="120">
+    <div class="qbox" v-for="(q,qi2) in draft.qs" :key="qi2">
+      <div class="row" style="justify-content:space-between"><strong>Question {{qi2+1}}</strong>
+        <button class="btn dng" v-if="draft.qs.length>1" @click="draft.qs.splice(qi2,1)">Remove</button></div>
+      <label :for="'q'+qi2">Question text</label>
+      <input :id="'q'+qi2" type="text" v-model="q.q" maxlength="150">
+      <label>Answers (select the correct one)</label>
+      <div class="ans" v-for="(o,oi) in q.o" :key="oi">
+        <input type="radio" :name="'c'+qi2" :value="oi" v-model="q.a" :aria-label="'Correct answer '+(oi+1)">
+        <input type="text" v-model="q.o[oi]" maxlength="80" :placeholder="'Answer '+(oi+1)" :aria-label="'Answer '+(oi+1)">
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn sec" @click="addQ">+ Add question</button>
+      <button class="btn" @click="saveQuiz">Save quiz</button>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.prod.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
