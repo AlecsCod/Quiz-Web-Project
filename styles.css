@@ -235,3 +235,219 @@ nav button.on{
   background:var(--pr);
   color:var(--prt);
 }
+
+/* =====================================================================
+   5. PAGE LAYOUT, HEADINGS, CARDS, GRID
+   ===================================================================== */
+
+main{
+  max-width:860px;
+  margin:auto;
+  /* The same centred 860px column as the nav, so they line up. */
+
+  padding:20px 16px 48px;
+  /* THREE values = top, left+right, bottom. Extra space at the bottom
+     so the last card never touches the screen edge. */
+}
+
+h1{
+  font-size:1.6rem;        /* about 25.6px */
+  margin:.2em 0 .6em;
+  /* Browsers give headings large default margins. This sets a tiny top
+     gap and a bigger bottom gap. "em" here means relative to THIS
+     element's font size; .2em is the same as 0.2em. */
+}
+
+h2{margin:.2em 0}
+/* Two values = top/bottom .2em, left/right 0. */
+
+.card{
+  /* The white rounded panel used all over the app. */
+  background:var(--card);
+  border:1px solid var(--bd);
+  border-radius:14px;
+  padding:18px;            /* space between the card edge and its content */
+  margin-bottom:14px;      /* gap before the next card */
+}
+
+.grid{
+  display:grid;
+  /* CSS GRID: a two-dimensional layout system (rows AND columns). */
+
+  gap:14px;
+  /* Space between grid cells, both horizontally and vertically. */
+
+  grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+  /* This single line makes the quiz list responsive with no media query.
+     Read it from the inside out:
+       minmax(250px, 1fr) -> each column is at LEAST 250px wide, and may
+                             grow to take an equal share (1fr) of the
+                             leftover space
+       repeat(auto-fill, ...) -> create as many such columns as fit in
+                                 the available width
+     Laptop (around 860px) fits 3 columns. Phone (around 380px) fits 1. */
+}
+
+.mu{
+  color:var(--mu);
+  font-size:.92rem;
+  /* Utility class for small muted text. Any element can opt in with
+     class="mu". */
+}
+
+
+/* =====================================================================
+   6. BUTTONS
+   ===================================================================== */
+
+.btn{
+  /* Default button: solid primary colour. */
+  background:var(--pr);
+  color:var(--prt);
+  border:0;
+  border-radius:10px;
+  padding:11px 18px;
+  /* Tall enough to tap comfortably on a phone (about 44px high). */
+  font:inherit;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.btn.sec{
+  /* Both classes needed: class="btn sec". It overrides parts of .btn to
+     make a SECONDARY button: transparent with an outline. */
+  background:transparent;
+  color:var(--tx);
+  border:1px solid var(--bd);
+}
+
+.btn.dng{
+  /* "dng" = danger, for Delete / Remove / Clear: a red outline button. */
+  background:transparent;
+  color:var(--no);
+  border:1px solid var(--no);
+}
+
+.btn:focus-visible,
+input:focus-visible,
+select:focus-visible{
+  /* A comma lets one rule target several selectors.
+     ":focus-visible" matches an element focused in a way that needs a
+     visible indicator: keyboard tabbing, yes; mouse clicking, no.
+     (There are no <select> elements in the app yet, so that part is
+     just future-proofing.) */
+  outline:3px solid var(--pr);
+  outline-offset:2px;
+  /* An outline is drawn outside the border and doesn't change layout.
+     offset moves it 2px away so it doesn't touch the element. This is
+     important for keyboard accessibility. */
+}
+
+.row{
+  /* A reusable "horizontal group" for button rows. */
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;     /* wrap onto new lines on narrow screens */
+  align-items:center;
+}
+
+
+/* =====================================================================
+   7. FORMS AND ERROR MESSAGES
+   ===================================================================== */
+
+label{
+  display:block;
+  /* Labels are inline by default. "block" puts each on its own line
+     above its input and lets the margin work vertically. */
+  font-weight:600;
+  margin:12px 0 4px;   /* 12px above, 0 sides, 4px below (close to its input) */
+}
+
+input[type=text],
+input[type=number]{
+  /* ATTRIBUTE SELECTOR: matches only inputs whose type is text or
+     number. Radio buttons are left alone. */
+  width:100%;
+  /* Fill the parent. This is safe because of box-sizing:border-box;
+     otherwise padding would make it overflow. */
+  padding:11px 12px;
+  border-radius:10px;
+  border:1px solid var(--bd);
+  background:var(--bg);      /* slightly different from the card, so the field stands out */
+  color:var(--tx);           /* inputs don't inherit text colour, so set it, or
+                                text would be dark-on-dark in dark mode */
+  font:inherit;
+  /* Keeps fonts consistent. It also keeps text at 16px, which stops iOS
+     Safari zooming the page when you tap a field (it zooms for <16px). */
+}
+
+input.bad{
+  border-color:var(--no);
+  /* Vue adds class "bad" to the name field when validation fails,
+     turning its border red. */
+}
+
+.err{
+  /* The red error box for validation messages. It is also reused for the
+     "Time's up!" notice on the quiz screen. */
+  background:var(--nob);
+  color:var(--no);
+  border-radius:10px;
+  padding:10px 14px;
+  margin:10px 0;
+}
+
+.err ul{
+  margin:4px 0 0;
+  padding-left:20px;
+  /* The create form lists several errors as <ul> bullets. Browsers
+     indent lists with default padding; this keeps that indent explicit
+     and the spacing tight. */
+}
+
+
+/* =====================================================================
+   8. QUIZ ANSWER OPTIONS
+   ===================================================================== */
+
+.opt{
+  /* Each possible answer is a big, full-width, left-aligned button. */
+  display:block;           /* buttons are inline-block by default */
+  width:100%;
+  text-align:left;         /* buttons centre text by default */
+  background:var(--card);
+  color:var(--tx);
+  border:2px solid var(--bd);   /* thicker border so state colours are easy to see */
+  border-radius:12px;
+  padding:14px;
+  margin:8px 0;
+  font:inherit;
+  cursor:pointer;
+}
+
+.opt:hover:not(:disabled){
+  /* Pseudo-classes can be chained: hovered AND not disabled.
+     Once you've answered, the buttons are disabled and no longer
+     highlight on hover. */
+  border-color:var(--pr);
+}
+
+.opt.ok{
+  /* Vue adds "ok" to the correct answer after you answer or run out of time. */
+  background:var(--okb);
+  border-color:var(--ok);
+}
+
+.opt.no{
+  /* Vue adds "no" to the wrong option you picked. */
+  background:var(--nob);
+  border-color:var(--no);
+}
+
+.opt:disabled{
+  cursor:default;          /* normal arrow: not clickable anymore */
+  color:var(--tx);
+  /* Browsers grey out disabled buttons by default, which would make the
+     answer text hard to read, so the text colour is forced back. */
+}
