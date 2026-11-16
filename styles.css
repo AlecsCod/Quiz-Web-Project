@@ -1,0 +1,237 @@
+:root{
+  --bg:#f5f6fa;   /* page background: very light grey-blue.
+                     #rrggbb is hexadecimal colour: red, green, blue
+                     from 00 (none) to ff (full). */
+  --card:#fff;    /* "surface" colour for cards, header, answer buttons.
+                     #fff is shorthand for #ffffff (white). */
+  --tx:#1d2233;   /* main text colour: dark navy, softer than pure black */
+  --mu:#68708a;   /* "muted" text for secondary information and hints */
+  --pr:#4f46e5;   /* PRIMARY brand colour (indigo): buttons, active tab,
+                     timer bar, focus rings */
+  --prt:#fff;     /* "primary text": colour of text drawn ON TOP of --pr,
+                     kept as its own variable because in dark mode the
+                     primary colour is light and the text must go dark */
+  --ok:#15803d;   /* strong green for "correct" text and borders */
+  --okb:#dcfce7;  /* very pale green fill behind a correct answer */
+  --no:#b91c1c;   /* strong red for wrong answers, errors, low time */
+  --nob:#fee2e2;  /* very pale red fill behind wrong answers/errors */
+  --bd:#e1e4ee;   /* "border" colour: card outlines, table lines,
+                     the empty part of the timer bar */
+
+  /* The next three lines are NOT variables. They are normal properties
+     that happen to be set on <html> itself. */
+
+  box-sizing:border-box;
+  /* By default CSS sizes boxes by content only, so padding and border
+     are ADDED to the width. With border-box, width includes padding and
+     border, which makes sizes predictable. (Section 3 applies this to
+     every element; this line covers <html> itself.) */
+
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  /* env() reads a value supplied by the DEVICE. "safe-area-inset-top" is
+     the height of the notch, camera cut-out or status bar on a phone;
+     "safe-area-inset-bottom" is the home-indicator bar on iPhones.
+     The HTML has viewport-fit=cover, which lets the page draw under
+     those areas, so we pad the page to keep content out of them.
+     The second value after the comma (0px) is the FALLBACK used when
+     the device reports nothing, which is the case on a laptop. */
+}
+
+
+/* =====================================================================
+   2. DARK MODE
+   ---------------------------------------------------------------------
+   Same variable names, darker values. Every other rule uses var(--x),
+   so redefining the variables recolours the entire app. No other rule
+   has to change.
+   ===================================================================== */
+
+/* AUTOMATIC dark mode.
+   "@media (prefers-color-scheme: dark)" is a MEDIA QUERY: the rules
+   inside apply only if the user's operating system or browser is set to
+   dark mode. */
+@media (prefers-color-scheme:dark){
+
+  /* :root:not([data-theme="light"])
+     = the <html> element, unless it has the attribute data-theme="light".
+     That gives you a manual override: if you later add a toggle button
+     that sets data-theme="light" on <html>, light colours win even on a
+     dark device. Nothing in the app sets this attribute today. */
+  :root:not([data-theme="light"]){
+
+    color-scheme:dark;
+    /* Tells the browser "this page is dark", so the parts the browser
+       draws itself (scrollbars, radio buttons, number-input arrows,
+       form controls) switch to dark styling too. */
+
+    --bg:#12141c;   /* very dark blue page background */
+    --card:#1c1f2b; /* slightly lighter dark surface for cards */
+    --tx:#eceefa;   /* near-white text */
+    --mu:#9aa1ba;   /* muted grey-lavender text */
+    --pr:#818cf8;   /* LIGHTER indigo, so it stands out on dark */
+    --prt:#12141c;  /* text on that light indigo flips to dark for contrast */
+    --ok:#4ade80;   /* bright green */
+    --okb:#14351f;  /* dark green fill */
+    --no:#f87171;   /* soft bright red */
+    --nob:#3b1717;  /* dark red fill */
+    --bd:#2c3042;   /* subtle dark border */
+  }
+}
+
+/* MANUAL dark mode: applies when <html data-theme="dark"> is set,
+   regardless of the device setting. The values are repeated from above
+   because a media query and an attribute selector can't be merged into a
+   single rule. */
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#12141c; --card:#1c1f2b; --tx:#eceefa; --mu:#9aa1ba;
+  --pr:#818cf8; --prt:#12141c;
+  --ok:#4ade80; --okb:#14351f; --no:#f87171; --nob:#3b1717; --bd:#2c3042;
+}
+
+
+/* =====================================================================
+   3. BASE STYLES / RESET
+   ===================================================================== */
+
+html{
+  scroll-padding-top:env(safe-area-inset-top,0px);
+  /* When the page scrolls to a target (an anchor link, or the browser
+     focusing a field), reserve this much space at the top so the target
+     doesn't end up hidden behind a notch. */
+}
+
+*{
+  box-sizing:border-box;
+  /* "*" matches EVERY element. This is the standard reset that makes
+     width and height include padding and border. Without it, an input
+     set to width:100% plus padding would stick out of its card. */
+}
+
+body{
+  margin:0;
+  /* Browsers add a default margin (about 8px) around the page. This removes it. */
+
+  background:var(--bg);   /* page colour comes from the theme variable */
+  color:var(--tx);        /* default text colour, inherited by children */
+
+  font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  /* "font" is a SHORTHAND for several properties:
+       16px  -> font-size
+       /1.5  -> line-height: each line is 1.5x the font size (airy, readable)
+       the list -> font-family, tried left to right until one exists:
+         system-ui     the device's native UI font
+         -apple-system San Francisco on iPhone/Mac
+         "Segoe UI"    Windows (quoted because the name has a space)
+         Roboto        Android
+         sans-serif    generic fallback if nothing above is installed
+       Using system fonts means nothing to download, so text appears
+       instantly. */
+}
+
+[v-cloak]{
+  display:none;
+  /* Vue puts the attribute v-cloak on #app and removes it as soon as
+     Vue has finished starting. Until then this rule hides the app, so
+     visitors never glimpse raw template text such as "{{ name }}"
+     while the script loads. */
+}
+
+
+/* =====================================================================
+   4. HEADER AND NAVIGATION BAR
+   ===================================================================== */
+
+header{
+  position:sticky;
+  /* "sticky" = the element scrolls with the page until it reaches the
+     position given by top, then sticks there. The nav stays visible. */
+
+  top:env(safe-area-inset-top,0px);
+  /* Stick just BELOW the phone notch rather than behind it. */
+
+  z-index:5;
+  /* Stacking order for overlapping elements: higher is drawn on top.
+     Without it, scrolling cards could slide over the header. */
+
+  background:var(--card);
+  /* Needs a solid background, or the content scrolling underneath
+     would show through. */
+
+  border-bottom:1px solid var(--bd);
+  /* Thin divider line. Shorthand: width style colour. */
+}
+
+nav{
+  max-width:860px;
+  /* Never wider than 860px, which keeps lines readable on big screens. */
+
+  margin:auto;
+  /* "auto" left and right margins centre a block that has a max-width.
+     (Shorthand with one value = all four sides; auto top/bottom is 0.) */
+
+  display:flex;
+  /* FLEXBOX: children are laid out in a row (the default direction)
+     instead of stacking vertically. */
+
+  align-items:center;
+  /* Cross-axis alignment: vertically centre the logo and buttons. */
+
+  gap:6px;
+  /* Space between flex children, with no margin hacks. */
+
+  padding:10px 16px;
+  /* Two values = vertical (top/bottom) then horizontal (left/right). */
+
+  flex-wrap:wrap;
+  /* If the items don't fit on one line (a narrow phone), let them wrap
+     onto a second line instead of overflowing off-screen. */
+}
+
+.logo{
+  font-weight:800;
+  /* Font thickness: 400 is normal, 700 bold, 800 extra bold. */
+
+  font-size:1.15rem;
+  /* 1.15 times the root font size (about 18.4px). */
+
+  margin-right:auto;
+  /* THE FLEXBOX TRICK: in a flex row an "auto" margin soaks up ALL
+     remaining free space. So the logo stays left and every button
+     after it is pushed to the right edge. */
+}
+
+nav button{
+  /* Descendant selector: only buttons INSIDE the nav. */
+
+  background:none;
+  border:0;
+  /* Strip the browser's default grey button look. */
+
+  color:var(--mu);
+  /* Inactive tabs are in the muted colour. */
+
+  font:inherit;
+  /* Form controls DON'T inherit the page font by default (they use a
+     small system font). "inherit" copies the font from the parent so
+     buttons match the rest of the page. */
+
+  font-weight:600;
+  padding:8px 12px;
+  /* Space inside the button: 8px top/bottom, 12px left/right. */
+
+  border-radius:8px;
+  /* Rounds the corners. */
+
+  cursor:pointer;
+  /* Shows the hand icon on hover so it feels clickable. */
+}
+
+nav button.on{
+  /* Button that ALSO has class "on". Vue adds this class to the tab for
+     the current view (:class="{on: view==='list'}"). It is more specific
+     than "nav button", so it overrides the colours above. */
+  background:var(--pr);
+  color:var(--prt);
+}
